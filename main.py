@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fpdf import FPDF
 
+from generatepdf import Pdf
 import models
 import schema
 from database import database
@@ -200,47 +201,34 @@ async def fetch_all_mark():
 
 # Create pdf for one student
 @app.get("/fetch-one-detail-in-pdf")
-async def fetch_all_mark_pdf(student_id: int):
-    pdf = FPDF()
-
-    # Add a page
-    pdf.add_page()
-
-    # set style and size of font
-    # that you want in the pdf
-    pdf.set_font("Arial", size=16)
-
+async def fetch_one_details(student_id: int):
+    pdf = Pdf()
+    pdf.create_page()
+    pdf.set_fonts(16, "Arial")
     count = 1
-
     students_db = await models.Student.objects.get(student_id=student_id)
     mark = await models.Mark.objects.filter(student_id=student_id).all()
-
-    pdf.cell(200, 10, txt=f"{count}. Student name : {students_db.student_name}", ln=1, align='L')
+    pdf.write_page(f"{count}. Student name : {students_db.student_name}",'L')
     sub = 1
     for i in mark:
         sub_id = i.subject_id.subject_id
         sub_name = await models.Subject.objects.filter(subject_id=sub_id).get()
-        pdf.cell(200, 10, txt=f"  {sub}.Subject name : {sub_name.subject_name}", ln=1, align='L')
-        pdf.cell(200, 10, txt=f"    Subject mark : {i.mark}", ln=1, align='L')
+        pdf.write_page(f"  {sub}.Subject name : {sub_name.subject_name}", 'L')
+        pdf.write_page(f"    Subject mark : {i.mark}", 'L')
         sub += 1
-        pdf.cell(200, 10, txt="", ln=1, align='L')
+        pdf.write_page("", 'L')
         count += 1
 
-    pdf.output(f"{students_db.student_id}_{students_db.student_name}.pdf")
+    pdf.generate(f"{students_db.student_id}_{students_db.student_name}")
     return f'/home/kalaiselvan/PycharmProjects/Curd_operation/{students_db.student_id}-{students_db.student_name}.pdf '
 
 
 # Create pdf file for all data
 @app.get("/fetch-all-in-pdf")
 async def fetch_all_mark_pdf():
-    pdf = FPDF()
-
-    # Add a page
-    pdf.add_page()
-
-    # set style and size of font
-    # that you want in the pdf
-    pdf.set_font("Arial", size=16)
+    pdf = Pdf()
+    pdf.create_page()
+    pdf.set_fonts(16, "Arial")
 
     count = 1
 
@@ -248,16 +236,17 @@ async def fetch_all_mark_pdf():
 
     for students in students_db:
         mark = await models.Mark.objects.filter(student_id=students.student_id).all()
-        pdf.cell(200, 10, txt=f"{count}. Student name : {students.student_name}", ln=1, align='L')
+        pdf.write_page(f"{count}. Student name : {students.student_name}","L")
         sub = 1
         for i in mark:
             sub_id = i.subject_id.subject_id
             sub_name = await models.Subject.objects.filter(subject_id=sub_id).get()
-            pdf.cell(200, 10, txt=f"  {sub}.Subject name : {sub_name.subject_name}", ln=1, align='L')
-            pdf.cell(200, 10, txt=f"    Subject mark : {i.mark}", ln=1, align='L')
+            pdf.write_page(f"  {sub}.Subject name : {sub_name.subject_name}",'L')
+            pdf.write_page(f"    Subject mark : {i.mark}",'L')
             sub += 1
-        pdf.cell(200, 10, txt="", ln=1, align='L')
+        pdf.write_page("", 'L')
         count += 1
 
-    pdf.output("All_details.pdf")
+    pdf.generate("All_details.pdf")
     return f'/home/kalaiselvan/PycharmProjects/Curd_operation/All_details.pdf '
+
