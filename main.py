@@ -1,10 +1,13 @@
+import generatepdf
 from fastapi import FastAPI
-from fpdf import FPDF
+from fpdf import FPDF, HTMLMixin
 
+from generatexl import Writter
 from generatepdf import Pdf
 import models
 import schema
 from database import database
+import xlsxwriter
 
 app = FastAPI()
 
@@ -200,53 +203,121 @@ async def fetch_all_mark():
 
 
 # Create pdf for one student
-@app.get("/fetch-one-detail-in-pdf")
+
+@app.get("/fetch-one-details-in-pdf")
 async def fetch_one_details(student_id: int):
-    pdf = Pdf()
-    pdf.create_page()
-    pdf.set_fonts(16, "Arial")
-    count = 1
+    Final_res = None
     students_db = await models.Student.objects.get(student_id=student_id)
     mark = await models.Mark.objects.filter(student_id=student_id).all()
-    pdf.write_page(f"{count}. Student name : {students_db.student_name}",'L')
     sub = 1
+    res = []
+
+    class WriteHtmlPDF(FPDF, HTMLMixin):
+        pass
+
+    html = f"""
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <h2 align="center">Report Card</h2>
+            </head>"""
+
+    html += f"""<body>
+                <h3 align="center"> Name of the Student:{students_db.student_name}    ID:{students_db.student_id}</h3>
+                <table class = "class" width="60%" height="100% align="center" border = "1">
+                
+                  <thead>
+                    <tr text-align = "center">
+                      <th align="center" width="30%"> S.No</th>
+                      <th align="center" width="40%">Subject Name</th>
+                      <th align="center" width="30%">Mark</th>
+                      <th align="center" width="30%">Result</th>
+                    </tr>
+                  </thead>
+                  <tbody class= "text-center text-sm">"""
+    total_marks = 0
     for i in mark:
+        total_marks += i.mark
         sub_id = i.subject_id.subject_id
         sub_name = await models.Subject.objects.filter(subject_id=sub_id).get()
-        pdf.write_page(f"  {sub}.Subject name : {sub_name.subject_name}", 'L')
-        pdf.write_page(f"    Subject mark : {i.mark}", 'L')
+        if i.mark >= 35:
+            result = "PASS"
+            res.append(result)
+        else:
+            result = "FAIL"
+            res.append(result)
+
+        html += "<tr>"
+        html += """<td  align="center"  border = "1">""" + str(sub) + "</td>"
+        html += """<td  align="center"  border = "1">""" + sub_name.subject_name + "</td>"
+        html += """<td  align="center"  border = "1">""" + str(i.mark) + "</td>"
+        html += """<td  align="center"  border = "1">""" + result + "</td>"
+        html += "</tr>"
+
         sub += 1
-        pdf.write_page("", 'L')
-        count += 1
+    for i in res:
+        if i == "FAIL":
+            Final_res = "FAIL"
+            break
+        else:
+            Final_res = "PASS"
+    html += f"""</tbody>
+            <tbody width="2%">
+                <tr text-align = "center">
+                  <td style="color : #0000ff" align="left" width="70%">Result: {Final_res}</td>
+                  <td align="left" width="60%" color:"#ff0000">Total Marks: {total_marks}</td>
+                </tr>
+              </tbody>
+              </table>
+            </body></html>"""
 
-    pdf.generate(f"{students_db.student_id}_{students_db.student_name}")
-    return f'/home/kalaiselvan/PycharmProjects/Curd_operation/{students_db.student_id}-{students_db.student_name}.pdf '
+    pdf = WriteHtmlPDF()
+    # First page
+    pdf.add_page()
+    pdf.write_html(html)
+    pdf.output(f"{students_db.student_name}.pdf")
 
 
-# Create pdf file for all data
-@app.get("/fetch-all-in-pdf")
-async def fetch_all_mark_pdf():
-    pdf = Pdf()
-    pdf.create_page()
-    pdf.set_fonts(16, "Arial")
+@app.get("/fetch-one-detail-in-csv")
+async def fetch_one_details(student_id: int):
+    Final_res = None
+    stud = await models.Student.objects.get(student_id=student_id)
+    mark = await models.Mark.objects.filter(student_id=student_id).all()
+    writer = Writter()
+    writer.create(f"{stud.student_name}.xlsx")
+    row = 0
+    col = 0
+    writer.write(row, col, "S.NO")
+    writer.write(row, col + 1, "Subject_name")
+    writer.write(row, col + 2, "Mark")
+    writer.write(row, col + 3, "Result")
+    res = []
+    total_marks = 0
+    SNO = 1
+    for i in mark:
+        total_marks += i.mark
+        sub_id = i.subject_id.subject_id
+        sub_name = await models.Subject.objects.filter(subject_id=sub_id).get()
+        if i.mark >= 35:
+            result = "PASS"
+            res.append(result)
+        else:
+            result = "FAIL"
+            res.append(result)
+        writer.write(row + 1, col, SNO)
+        writer.write(row + 1, col + 1, sub_name.subject_name)
+        writer.write(row + 1, col + 2, i.mark)
+        writer.write(row + 1, col + 3, result)
+        row += 1
+        SNO += 1
+    for i in res:
+        if i == "FAIL":
+            Final_res = "FAIL"
+            break
+        else:
+            Final_res = "PASS"
+    writer.write(row + 2, col, f"Result:{Final_res}")
+    writer.write(row + 2, col + 1, f"Total_Mark:{total_marks}")
 
-    count = 1
-
-    students_db = await models.Student.objects.all()
-
-    for students in students_db:
-        mark = await models.Mark.objects.filter(student_id=students.student_id).all()
-        pdf.write_page(f"{count}. Student name : {students.student_name}","L")
-        sub = 1
-        for i in mark:
-            sub_id = i.subject_id.subject_id
-            sub_name = await models.Subject.objects.filter(subject_id=sub_id).get()
-            pdf.write_page(f"  {sub}.Subject name : {sub_name.subject_name}",'L')
-            pdf.write_page(f"    Subject mark : {i.mark}",'L')
-            sub += 1
-        pdf.write_page("", 'L')
-        count += 1
-
-    pdf.generate("All_details.pdf")
-    return f'/home/kalaiselvan/PycharmProjects/Curd_operation/All_details.pdf '
-
+    writer.close()
