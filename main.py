@@ -1,13 +1,9 @@
-import generatepdf
 from fastapi import FastAPI
 from fpdf import FPDF, HTMLMixin
-
 from generatexl import Writter
-from generatepdf import Pdf
 import models
 import schema
 from database import database
-import xlsxwriter
 
 app = FastAPI()
 
@@ -262,21 +258,33 @@ async def fetch_one_details(student_id: int):
             break
         else:
             Final_res = "PASS"
-    html += f"""</tbody>
-            <tbody width="2%">
-                <tr text-align = "center">
-                  <td style="color : #0000ff" align="left" width="70%">Result: {Final_res}</td>
-                  <td align="left" width="60%" color:"#ff0000">Total Marks: {total_marks}</td>
-                </tr>
-              </tbody>
+    if Final_res == "FAIL":
+        html += f"""</tbody>
+                <tbody width="2%">
+                    <tr text-align = "center">
+                      <td  bgcolor="#ff0000" align="left" width="70%">Result: {Final_res}</td>
+                      <td align="left" width="60%" color:"#ff0000">Total Marks: {total_marks}</td>
+                    </tr>
+                  </tbody>
               </table>
             </body></html>"""
+    else:
+        html += f"""</tbody>
+                        <tbody width="2%">
+                            <tr text-align = "center">
+                              <td  bgcolor="#00FF00" align="left" width="70%">Result: {Final_res}</td>
+                              <td align="left" width="60%" color:"#ff0000">Total Marks: {total_marks}</td>
+                            </tr>
+                          </tbody>
+                      </table>
+                    </body></html>"""
 
     pdf = WriteHtmlPDF()
     # First page
     pdf.add_page()
     pdf.write_html(html)
     pdf.output(f"{students_db.student_name}.pdf")
+    return f" home /kalaiselvan/PycharmProjects/Curd_operation /{students_db.student_name}.pdf"
 
 
 @app.get("/fetch-one-detail-in-csv")
@@ -318,6 +326,7 @@ async def fetch_one_details(student_id: int):
         else:
             Final_res = "PASS"
     writer.write(row + 2, col, f"Result:{Final_res}")
-    writer.write(row + 2, col + 1, f"Total_Mark:{total_marks}")
+    writer.write(row + 2, col + 2, f"Total_Mark:{total_marks}")
 
     writer.close()
+    return f" home/kalaiselvan/PycharmProjects/Curd_operation/{stud.student_name}.xlsx"
