@@ -276,8 +276,8 @@ async def fetch_one_details(student_id: int):
         html += f"""</tbody>
                         <tbody width="2%">
                             <tr text-align = "center">
-                              <td align="left" width="70%">Result: {Final_res}</td>
-                              <td align="left" width="60%" >Total Marks: {total_marks}</td>
+                              <td align="left" width="70%"><B>Result: {Final_res}</B></td>
+                              <td align="left" width="60%" ><B>Total Marks: {total_marks}</B></td>
                             </tr>
                           </tbody>
                       </table>
