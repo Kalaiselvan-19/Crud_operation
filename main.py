@@ -248,7 +248,11 @@ async def fetch_one_details(student_id: int):
         html += """<td  align="center"  border = "1">""" + str(sub) + "</td>"
         html += """<td  align="center"  border = "1">""" + sub_name.subject_name + "</td>"
         html += """<td  align="center"  border = "1">""" + str(i.mark) + "</td>"
-        html += """<td  align="center"  border = "1">""" + result + "</td>"
+        if result == "PASS":
+            html += """<td  align="center"  border = "1">""" + result + "</td>"
+        else:
+            html += """<td  align="center"  border = "1"><font color="#FF0000">""" + result + "</font></td>"
+
         html += "</tr>"
 
         sub += 1
@@ -262,8 +266,8 @@ async def fetch_one_details(student_id: int):
         html += f"""</tbody>
                 <tbody width="2%">
                     <tr text-align = "center">
-                      <td  bgcolor="#ff0000" align="left" width="70%">Result: {Final_res}</td>
-                      <td align="left" width="60%" color:"#ff0000">Total Marks: {total_marks}</td>
+                      <td align="left" width="70%" ><font color="#FF0000"><B>Result: {Final_res}</font></B></td>
+                      <td align="left" width="60%" ><font color="#000000" ><B>Total Marks: {total_marks}</font></B></td>
                     </tr>
                   </tbody>
               </table>
@@ -272,8 +276,8 @@ async def fetch_one_details(student_id: int):
         html += f"""</tbody>
                         <tbody width="2%">
                             <tr text-align = "center">
-                              <td  bgcolor="#00FF00" align="left" width="70%">Result: {Final_res}</td>
-                              <td align="left" width="60%" color:"#ff0000">Total Marks: {total_marks}</td>
+                              <td align="left" width="70%">Result: {Final_res}</td>
+                              <td align="left" width="60%" >Total Marks: {total_marks}</td>
                             </tr>
                           </tbody>
                       </table>
