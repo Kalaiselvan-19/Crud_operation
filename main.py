@@ -1,9 +1,16 @@
-from fastapi import FastAPI
+from email.mime.application import MIMEApplication
+
+from fastapi import FastAPI, BackgroundTasks
 from fpdf import FPDF, HTMLMixin
 from generatexl import Writter
 import models
 import schema
 from database import database
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 
 app = FastAPI()
 
@@ -199,9 +206,8 @@ async def fetch_all_mark():
 
 
 # Create pdf for one student
-
-@app.get("/fetch-one-details-in-pdf")
-async def fetch_one_details(student_id: int):
+@app.get("/fetch-one-detail-in-pdf")
+async def fetch_one_detail_pdf(student_id: int):
     Final_res = None
     students_db = await models.Student.objects.get(student_id=student_id)
     mark = await models.Mark.objects.filter(student_id=student_id).all()
@@ -222,7 +228,6 @@ async def fetch_one_details(student_id: int):
     html += f"""<body>
                 <h3 align="center"> Name of the Student:{students_db.student_name}    ID:{students_db.student_id}</h3>
                 <table class = "class" width="60%" height="100% align="center" border = "1">
-                
                   <thead>
                     <tr text-align = "center">
                       <th align="center" width="30%"> S.No</th>
@@ -243,7 +248,6 @@ async def fetch_one_details(student_id: int):
         else:
             result = "FAIL"
             res.append(result)
-
         html += "<tr>"
         html += """<td  align="center"  border = "1">""" + str(sub) + "</td>"
         html += """<td  align="center"  border = "1">""" + sub_name.subject_name + "</td>"
@@ -252,9 +256,7 @@ async def fetch_one_details(student_id: int):
             html += """<td  align="center"  border = "1">""" + result + "</td>"
         else:
             html += """<td  align="center"  border = "1"><font color="#FF0000">""" + result + "</font></td>"
-
         html += "</tr>"
-
         sub += 1
     for i in res:
         if i == "FAIL":
@@ -288,11 +290,11 @@ async def fetch_one_details(student_id: int):
     pdf.add_page()
     pdf.write_html(html)
     pdf.output(f"{students_db.student_name}.pdf")
-    return f" home /kalaiselvan/PycharmProjects/Curd_operation /{students_db.student_name}.pdf"
+    return f" home/kalaiselvan/PycharmProjects/Curd_operation/{students_db.student_name}.pdf"
 
 
 @app.get("/fetch-one-detail-in-csv")
-async def fetch_one_details(student_id: int):
+async def fetch_one_detail_csv(student_id: int):
     Final_res = None
     stud = await models.Student.objects.get(student_id=student_id)
     mark = await models.Mark.objects.filter(student_id=student_id).all()
@@ -334,3 +336,82 @@ async def fetch_one_details(student_id: int):
 
     writer.close()
     return f" home/kalaiselvan/PycharmProjects/Curd_operation/{stud.student_name}.xlsx"
+
+
+@app.get('/Mail/Pdf')
+async def send_mail(student_id: int):
+    stud = await models.Student.objects.get(student_id=student_id)
+    await fetch_one_detail_pdf(student_id=student_id)
+    mail_content = f'The Mark statement for the  {stud.student_name}'
+    # The mail addresses and password
+    sender_address = 'kalaiselvan1360@gmail.com'
+    sender_pass = 'rmhmqwftwohgaitx'
+    receiver_address = 'kalaiselva1901@gmail.com'
+    # Setup the MIME
+    message = MIMEMultipart()
+    message['From'] = sender_address
+    message['To'] = receiver_address
+    message['Subject'] = 'Student_Detail'
+    # The subject line
+    # The body and the attachments for the mail
+    message.attach(MIMEText(mail_content))
+    attach_file_name = f'{stud.student_name}.pdf'
+    attach_file = open(attach_file_name, 'rb')  # Open the file as binary mode
+    attach = MIMEBase('application', 'octate-stream')
+    attach.set_payload(attach_file.read())
+    encoders.encode_base64(attach)  # encode the attachment
+
+    with open(f"/home/kalaiselvan/PycharmProjects/Crud_operation/{stud.student_name}.pdf", "rb") as f:
+        attach = MIMEApplication(f.read(), _subtype='pdf')
+        # addattach header with filename
+        # attach.add_header('Content-Decomposition', 'attachment',
+        #                   filename=str(f"/home/kalaiselvan/PycharmProjects/Crud_operation/{stud.student_name}.pdf"))
+        attach.add_header('Content-Disposition', 'attachment; filename="%s"' % attach_file_name)
+
+        message.attach(attach)
+    # Create SMTP session for sending the mail
+    session = smtplib.SMTP('smtp.gmail.com', 587)  # use gmail with port
+    session.starttls()  # enable security
+    session.login(sender_address, sender_pass)  # login with mail_id and password
+    text = message.as_string()
+    session.sendmail(sender_address, receiver_address, text)
+
+    session.quit()
+    return "Mail sended Sucessfully"
+
+
+@app.get('/Mail/csv')
+async def send_mail_csv(student_id: int):
+    stud = await models.Student.objects.get(student_id=student_id)
+    await fetch_one_detail_csv(student_id=student_id)
+    mail_content = f'The Mark statement for the  {stud.student_name}'
+    # The mail addresses and password
+    sender_address = 'kalaiselvan1360@gmail.com'
+    sender_pass = 'rmhmqwftwohgaitx'
+    receiver_address = 'kalaiselva1901@gmail.com'
+    # Setup the MIME
+    message = MIMEMultipart()
+    message['From'] = sender_address
+    message['To'] = receiver_address
+    message['Subject'] = 'Student_Detail'
+    # The subject line
+    # The body and the attachments for the mail
+    message.attach(MIMEText(mail_content))
+    attach_file_name = f'{stud.student_name}.xlsx'
+    attach_file = open(attach_file_name, 'rb')  # Open the file as binary mode
+    attach = MIMEBase('application', 'octate-stream')
+    attach.set_payload(attach_file.read())
+    encoders.encode_base64(attach)  # encode the attachment
+    with open(f"/home/kalaiselvan/PycharmProjects/Crud_operation/{stud.student_name}.xlsx", "rb") as f:
+        attach = MIMEApplication(f.read(), _subtype="vnd.openxmlformats.officedocument.spreadsheetml.sheet")
+        attach.add_header('Content-Disposition', 'attachment; filename="%s"' % attach_file_name)
+        message.attach(attach)
+    # Create SMTP session for sending the mail
+    session = smtplib.SMTP('smtp.gmail.com', 587)  # use gmail with port
+    session.starttls()  # enable security
+    session.login(sender_address, sender_pass)  # login with mail_id and password
+    text = message.as_string()
+    session.sendmail(sender_address, receiver_address, text)
+
+    session.quit()
+    return "Mail sended Sucessfully"
