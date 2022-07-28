@@ -1,7 +1,10 @@
+from asyncio.log import logger
 from email.mime.application import MIMEApplication
 
 from fastapi import FastAPI, BackgroundTasks
 from fpdf import FPDF, HTMLMixin
+from sqlalchemy.testing import asyncio
+
 from generatexl import Writter
 import models
 import schema
@@ -394,7 +397,6 @@ async def send_mail_csv(student_id: int):
     message['From'] = sender_address
     message['To'] = receiver_address
     message['Subject'] = 'Student_Detail'
-    # The subject line
     # The body and the attachments for the mail
     message.attach(MIMEText(mail_content))
     attach_file_name = f'{stud.student_name}.xlsx'
@@ -412,6 +414,10 @@ async def send_mail_csv(student_id: int):
     session.login(sender_address, sender_pass)  # login with mail_id and password
     text = message.as_string()
     session.sendmail(sender_address, receiver_address, text)
-
     session.quit()
     return "Mail sended Sucessfully"
+
+
+@app.get("/")
+async def test():
+    return "Success"
