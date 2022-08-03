@@ -3,12 +3,13 @@ from email.mime.application import MIMEApplication
 
 from fastapi import FastAPI, BackgroundTasks
 from fpdf import FPDF, HTMLMixin
+from sqlalchemy.orm import Session
 from sqlalchemy.testing import asyncio
 
 from generatexl import Writter
 import models
 import schema
-from database import database
+from database import database, engine
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -18,6 +19,11 @@ from email import encoders
 app = FastAPI()
 
 app.state.database = database
+
+
+def get_session():
+    with Session(engine) as session:
+        yield session
 
 
 @app.on_event("startup")
