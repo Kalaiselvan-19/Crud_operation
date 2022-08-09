@@ -1,11 +1,7 @@
-from asyncio.log import logger
 from email.mime.application import MIMEApplication
-
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI
 from fpdf import FPDF, HTMLMixin
 from sqlalchemy.orm import Session
-from sqlalchemy.testing import asyncio
-
 from generatexl import Writter
 import models
 import schema
@@ -127,7 +123,7 @@ async def update_subject(subject_id: int, subject: schema.SubjectUpdateSchema):
 
 
 # Update Mark
-@app.put('/Mark/{mark_id}')
+@app.put('/mark/{mark_id}')
 async def update_mark(mark_id: int, mark: schema.MarkUpdateSchema):
     mark_update = await models.Mark.objects.get(mark_id=mark_id)
     mark_update.mark_id = mark.mark_id
@@ -139,26 +135,28 @@ async def update_mark(mark_id: int, mark: schema.MarkUpdateSchema):
 
 
 # Delete student
-@app.delete('/delete/{student_id}')
+@app.delete('/stud-delete/{student_id}')
 async def delete_student(student: int):
     stud = await models.Student.objects.get(student_id=student)
     await stud.marks.clear(keep_reversed=False)
     await stud.delete()
+    return "Sucessfully deleted"
 
 
 # Delete subject
-@app.delete('/delete/{subject_id}')
+@app.delete('/sub-delete/{subject_id}')
 async def delete_subject(subject_id: int):
     sub = await models.Subject.objects.get(subject_id=subject_id)
     await sub.marks.clear(keep_reversed=False)
     await sub.delete()
-
+    return "Sucessfully deleted"
 
 # Delete Mark
-@app.delete('/delete/{mark_id}')
+@app.delete('/mark-delete/{mark_id}')
 async def delete_mark(mark_id: int):
     mark = await models.Mark.objects.get(mark_id=mark_id)
     await mark.delete()
+    return "Sucessfully deleted"
 
 
 @app.get("/fetch/{student_id}")
@@ -356,7 +354,7 @@ async def send_mail(student_id: int):
     sender_address = 'kalaiselvan1360@gmail.com'
     sender_pass = 'rmhmqwftwohgaitx'
     receiver_address = 'kalaiselva1901@gmail.com'
-    # Setup the MIME
+    # Set up the MIME
     message = MIMEMultipart()
     message['From'] = sender_address
     message['To'] = receiver_address
@@ -373,8 +371,6 @@ async def send_mail(student_id: int):
     with open(f"/home/kalaiselvan/PycharmProjects/Crud_operation/{stud.student_name}.pdf", "rb") as f:
         attach = MIMEApplication(f.read(), _subtype='pdf')
         # addattach header with filename
-        # attach.add_header('Content-Decomposition', 'attachment',
-        #                   filename=str(f"/home/kalaiselvan/PycharmProjects/Crud_operation/{stud.student_name}.pdf"))
         attach.add_header('Content-Disposition', 'attachment; filename="%s"' % attach_file_name)
 
         message.attach(attach)
