@@ -39,8 +39,20 @@ async def shutdown() -> None:
 # create student
 @app.post('/add-student')
 async def add_student(student: schema.StudentSchema):
-    student = models.Student(student_name=student.student_name)
-    response = await student.save()
+    student = models.Student(student_name=student.student_name, aadhar_number=student.aadhar_number)
+    re = await models.Student.objects.all()
+    s = []
+    for i in re:
+        if i.aadhar_number == student.aadhar_number:
+            s.append(i)
+    if len(s) == 0:
+        if len(str(student.aadhar_number)) == 10:
+            response = await student.save()
+        else:
+            response = "Aadhar number must be unique character please check it"
+    else:
+        response = "Student already exits"
+
     return response
 
 
@@ -150,6 +162,7 @@ async def delete_subject(subject_id: int):
     await sub.marks.clear(keep_reversed=False)
     await sub.delete()
     return "Sucessfully deleted"
+
 
 # Delete Mark
 @app.delete('/mark-delete/{mark_id}')

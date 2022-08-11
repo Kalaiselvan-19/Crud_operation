@@ -3,7 +3,7 @@ from typing import Optional
 import ormar
 import sqlalchemy
 
-from database import metadata, database, DATABASE_URL
+from database import metadata, database, DATABASE_URL,TEST_DATABASE_URL
 import databases
 
 
@@ -18,6 +18,7 @@ class Student(ormar.Model):
 
     student_id: int = ormar.Integer(primary_key=True)
     student_name: str = ormar.String(max_length=100)
+    aadhar_number: str = ormar.String(max_length=20)
 
 
 class Subject(ormar.Model):
@@ -41,4 +42,6 @@ class Mark(ormar.Model):
 engine = sqlalchemy.create_engine(DATABASE_URL)
 # just to be sure we clear the db before
 # metadata.create_all(engine)
+metadata.create_all(engine)
+engine = sqlalchemy.create_engine(TEST_DATABASE_URL)
 metadata.create_all(engine)

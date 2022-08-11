@@ -4,34 +4,34 @@ from models import Student, Subject, Mark
 
 
 def test_all_endpoints():
-    # note that TestClient is only sync, don't use asyns here
     client = TestClient(app)
-    # note that you need to connect to database manually
-    # or use client as contextmanager during tests
     with client as client:
-        # response = client.post("/add-student", json={"student_name": "kalai"})
-        # item = Student(**response.json())
+        # response = client.post("/add-student", json={"student_name": "kalais", "aadhar_number": "6382510383"})
+        # print(response.json())
+        # item = Student(** response.json())
         # assert item.student_id is not None
 
         response = client.get("/all-student")
         items = [Student(**student_name) for student_name in response.json()]
-        assert items[0] == Student.student_id
+        assert items[-1] == Student.student_id
 
-        items[0].student_name = "New name"
-        response = client.put(f"/student/{items[0].student_id}", json=items[0].dict())
-        assert response.json() == items[0].dict()
+        items[-1].student_name = "New name"
+        response = client.put(f"/student/{items[-1].student_id}", json=items[-1].dict())
+        assert response.json() == items[-1].dict()
 
         response = client.get("/all-student")
         items = [Student(**student_name) for student_name in response.json()]
-        assert items[0].student_name == "New name"
+        assert items[-1].student_name == "New name"
 
-        response = client.delete(f"/stud-delete/{items[-1].student_id}", json=items[-1].dict())
-        assert response.json().get("deleted_rows", "__UNDEFINED__") != "__UNDEFINED__"
+        response = client.delete(f"/stud-delete/{items[-1].dict()}", json=items[-1].dict())
+        print(response.json())
+        assert response.json() is None
         response = client.get(f"/student/{items[-1].student_id}")
         items = response.json()
         print(items)
         assert len(items) == 0
-# # For Subject
+
+    # For Subject
         # response = client.post("/add-subject", json={"subject_name": "Maths"})
         # item = Subject(**response.json())
         # assert item.subject_id is not None

@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 class StudentSchema(BaseModel):
     # Student_id: Optional[int]
     student_name: Optional[str]
+    aadhar_number: str
 
     class Config:
         orm_mode = True
